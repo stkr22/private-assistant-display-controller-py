@@ -1,0 +1,38 @@
+{
+	"name": "private-assistant-display-controller-dev-environment",
+	"image": "ghcr.io/stkr22/devcontainer-python-container:1.3.0@sha256:03811019a87d4c39e8f26871c3a7c5e99c14124242821c717abdd9a279528687",
+	"runArgs": [
+		"--cap-add=NET_RAW" // Needed for Claude Code IDE integration
+	],
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-python.python",
+				"samuelcolvin.jinjahtml",
+				"streetsidesoftware.code-spell-checker",
+				"christian-kohler.path-intellisense",
+				"charliermarsh.ruff",
+				"ms-python.mypy-type-checker",
+				"tamasfe.even-better-toml",
+				"github.vscode-github-actions",
+				"oderwat.indent-rainbow",
+				"mhutchie.git-graph",
+				"vivaxy.vscode-conventional-commits",
+				"Anthropic.claude-code"
+			]
+		}
+	},
+	"mounts": [
+		{
+			"source": "claude-code-bashhistory-${devcontainerId}",
+			"target": "/commandhistory",
+			"type": "volume"
+		},
+		{
+			"source": "claude-code-config-${devcontainerId}",
+			"target": "/home/vscode/.claude",
+			"type": "volume"
+		}
+	],
+	"postCreateCommand": "uv sync --group dev"
+}

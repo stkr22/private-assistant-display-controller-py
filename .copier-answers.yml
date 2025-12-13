@@ -1,0 +1,17 @@
+# Changes here will be overwritten by Copier
+_commit: v3.4.0
+_src_path: https://github.com/stkr22/copier-python-project
+author_email: sktr22@github.com
+author_full_name: sktr22
+codeowner_username: '@stkr22'
+copyright_license: GPL-3.0
+github_repository_name: private-assistant-display-controller-py
+github_username: stkr22
+project_description: Package is intended to be used in conjunction with the display
+    skill to control a display device.
+project_name: Private Assistant Display Controller
+publish_to_pypi: true
+python_package_distribution_name: private-assistant-display-controller
+python_package_import_name: private_assistant_display_controller
+python_package_version: 0.0.1
+use_containers: false

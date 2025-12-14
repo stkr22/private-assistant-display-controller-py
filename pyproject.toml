@@ -1,5 +1,5 @@
 [build-system]
-requires = ["uv_build>=0.8.11,<0.9.0"]
+requires = ["uv_build>=0.9.17,<0.10.0"]
 build-backend = "uv_build"
 
 [project]
@@ -25,7 +25,21 @@ classifiers = [
 ]
 
 requires-python = ">=3.12,<3.14"
-dependencies = []
+dependencies = [
+    "aiomqtt>=2.0.0",
+    "minio>=7.2.0",
+    "Pillow>=10.0.0",
+    "pydantic>=2.9.0",
+    "pydantic-settings>=2.0.0",
+    "pyyaml>=6.0.0",
+    "typer>=0.9.0",
+]
+
+[project.optional-dependencies]
+rpi = ["inky>=2.0.0"]
+
+[project.scripts]
+inky-controller = "private_assistant_display_controller.main:app"
 
 [project.urls]
 Homepage = "https://github.com/stkr22/private-assistant-display-controller-py"
@@ -36,13 +50,14 @@ Changelog = "https://github.com/stkr22/private-assistant-display-controller-py/b
 
 [dependency-groups]
 dev = [
-    "ruff>=0.8.0",
-    "mypy>=1.11.0",
-    "pytest>=8.3.3",
-    "pytest-cov>=6.0.0",
+    "ruff~=0.14.1",
+    "mypy~=1.17.0",
+    "pytest~=8.4.1",
+    "pytest-cov~=6.2.1",
     "pytest-xdist~=3.6.0",
     "coverage[toml]~=7.6.0",
-    "commitizen~=4.8.3",
+    "pytest-asyncio~=0.25.2",
+    "types-PyYAML>=6.0.0",
 ]
 
 [tool.ruff]
@@ -69,6 +84,9 @@ select = [
 ]
 ignore = ["E203"]
 
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["PLR2004"]  # Magic values are acceptable in tests
+
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
@@ -81,6 +99,11 @@ warn_unused_configs = true
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 addopts = "-ra -q -n auto"
+markers = [
+    "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
+]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 
 [tool.coverage.run]
 source = ["private_assistant_display_controller"]
@@ -92,10 +115,3 @@ exclude_lines = [
     "def __repr__",
     "if __name__ == .__main__.:",
 ]
-
-[tool.commitizen]
-name = "cz_conventional_commits"
-tag_format = "v$version"
-version_scheme = "pep440"
-version_provider = "scm"
-update_changelog_on_bump = true

@@ -4,7 +4,7 @@ This package provides a daemon that receives MQTT commands from the
 picture-display-skill and displays images on an Inky Impression e-ink display.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 from private_assistant_display_controller.config import Settings, load_settings
 from private_assistant_display_controller.controller import DisplayController

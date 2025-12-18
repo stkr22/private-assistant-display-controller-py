@@ -417,7 +417,7 @@ wheels = [
 
 [[package]]
 name = "private-assistant-display-controller"
-version = "0.0.1"
+version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "aiomqtt" },

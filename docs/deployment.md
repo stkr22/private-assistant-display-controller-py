@@ -47,6 +47,7 @@ Check if I2C is enabled:
 ```bash
 sudo raspi-config
 # Interface Options → I2C → Enable
+# Interface Options → SPI → Enable
 ```
 
 

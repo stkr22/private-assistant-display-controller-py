@@ -140,7 +140,16 @@ class InkyDisplay(DisplayInterface):
 
         logger.info("Updating display (this takes ~20-25 seconds)...")
         self._display.set_image(image, saturation=saturation)  # type: ignore[union-attr]
-        self._display.show(busy_wait=True)  # type: ignore[union-attr]
+        try:
+            self._display.show(busy_wait=True)  # type: ignore[union-attr]
+        except FileNotFoundError as e:
+            raise DisplayError(
+                "SPI device not found. Ensure SPI is enabled via raspi-config and reboot."
+            ) from e
+        except PermissionError as e:
+            raise DisplayError(
+                "Permission denied accessing SPI device. Add user to 'spi' group and re-login."
+            ) from e
         logger.info("Display update complete")
 
     async def clear(self) -> None:

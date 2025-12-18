@@ -41,6 +41,15 @@ uv venv --python 3.13
 uv pip install 'private-assistant-display-controller[rpi]'
 ```
 
+### 5 Activate I2C
+Check if I2C is enabled:
+
+```bash
+sudo raspi-config
+# Interface Options → I2C → Enable
+```
+
+
 ## Configuration
 
 Create `/opt/inky-controller/config.yaml`:

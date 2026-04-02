@@ -3,8 +3,9 @@ version: "3.8"
 services:
   # Development container service
   dev:
-    image: ghcr.io/stkr22/devcontainer-python-container:1.3.0@sha256:03811019a87d4c39e8f26871c3a7c5e99c14124242821c717abdd9a279528687
+    image: ghcr.io/stkr22/devcontainer-python-container:1.5.0@sha256:94c35390676241f49f65561340fc23b59d7db15cdd878ad73a8f459ebae23b2c
     container_name: display-controller-dev
+    userns_mode: "keep-id"  # Podman: keeps your host UID
     volumes:
       - ..:/workspace:cached,U
     command: sleep infinity

@@ -32,8 +32,8 @@ from PIL import Image
 from private_assistant_display_controller.config import (
     DeviceConfig,
     DisplayConfig,
-    MinIOConfig,
     MQTTConfig,
+    S3Config,
     Settings,
 )
 from private_assistant_display_controller.controller import DisplayController
@@ -84,7 +84,7 @@ def controller_settings(mqtt_config, test_device_id) -> Settings:
         websocket_path=None,
         tls=False,
     )
-    minio = MinIOConfig.model_construct(
+    s3 = S3Config.model_construct(
         endpoint="localhost:9000",
         bucket="test-bucket",
         access_key=None,
@@ -102,7 +102,7 @@ def controller_settings(mqtt_config, test_device_id) -> Settings:
     return Settings.model_construct(
         device=device,
         mqtt=mqtt,
-        minio=minio,
+        s3=s3,
         display=display,
         config_file=None,
     )
@@ -113,17 +113,17 @@ def sample_registration_response() -> RegistrationResponse:
     """Create a registration response for testing."""
     return RegistrationResponse(
         status="registered",
-        minio_endpoint="minio:9000",
-        minio_bucket="inky-images",
-        minio_access_key="test-access-key",
-        minio_secret_key="test-secret-key",
-        minio_secure=False,
+        s3_endpoint="s3:9000",
+        s3_bucket="inky-images",
+        s3_access_key="test-access-key",
+        s3_secret_key="test-secret-key",
+        s3_secure=False,
     )
 
 
 @pytest.fixture
-def mock_minio_image():
-    """Create a mock image for MinIO responses."""
+def mock_s3_image():
+    """Create a mock image for S3 responses."""
     return Image.new("RGB", (1600, 1200), color="blue")
 
 
@@ -142,11 +142,11 @@ async def mqtt_test_client(mqtt_config):
 async def running_controller(
     controller_settings,
     sample_registration_response,
-    mock_minio_image,
+    mock_s3_image,
     mqtt_config,
     test_device_id,
 ):
-    """Start the controller in background with mocked MinIO.
+    """Start the controller in background with mocked S3.
 
     The controller will:
     1. Connect to MQTT
@@ -155,12 +155,12 @@ async def running_controller(
     4. Listen for commands on inky/{device_id}/command
     5. Send acknowledgments to inky/{device_id}/status
     """
-    # Create a mock for MinIO fetch_image
-    mock_fetch = AsyncMock(return_value=mock_minio_image)
+    # Create a mock for S3 fetch_image
+    mock_fetch = AsyncMock(return_value=mock_s3_image)
 
-    # Patch the MinIO client's fetch_image method
+    # Patch the S3 client's fetch_image method
     with patch(
-        "private_assistant_display_controller.minio_client.MinIOImageClient.fetch_image",
+        "private_assistant_display_controller.s3_client.S3ImageClient.fetch_image",
         mock_fetch,
     ):
         controller = DisplayController(controller_settings)
@@ -498,25 +498,25 @@ class TestErrorHandling:
         assert error_message is not None, "Error message should be present"
 
     @pytest.mark.asyncio
-    async def test_minio_fetch_failure(
+    async def test_s3_fetch_failure(
         self,
         controller_settings,
         sample_registration_response,
         mqtt_config,
         test_device_id,
     ):
-        """Test handling of MinIO fetch failures.
+        """Test handling of S3 fetch failures.
 
         Flow:
-        1. Start controller with MinIO fetch mocked to raise exception
+        1. Start controller with S3 fetch mocked to raise exception
         2. Send display command
         3. Assert error acknowledgment is received
         """
-        # Patch MinIO to raise an exception
-        mock_fetch = AsyncMock(side_effect=Exception("MinIO connection failed"))
+        # Patch S3 client to raise an exception
+        mock_fetch = AsyncMock(side_effect=Exception("S3 connection failed"))
 
         with patch(
-            "private_assistant_display_controller.minio_client.MinIOImageClient.fetch_image",
+            "private_assistant_display_controller.s3_client.S3ImageClient.fetch_image",
             mock_fetch,
         ):
             controller = DisplayController(controller_settings)

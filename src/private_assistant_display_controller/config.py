@@ -28,18 +28,18 @@ class MQTTConfig(BaseSettings):
     tls: bool = Field(default=False, description="Enable TLS/SSL encryption")
 
 
-class MinIOConfig(BaseSettings):
-    """MinIO connection settings.
+class S3Config(BaseSettings):
+    """S3-compatible object storage connection settings.
 
     These are typically populated from the registration response,
     but can be pre-configured via environment variables.
     """
 
-    endpoint: str = Field(default="localhost:9000", description="MinIO server endpoint")
+    endpoint: str = Field(default="localhost:9000", description="S3 server endpoint")
     bucket: str = Field(default="inky-images", description="Bucket containing images")
-    access_key: SecretStr | None = Field(default=None, description="MinIO access key")
-    secret_key: SecretStr | None = Field(default=None, description="MinIO secret key")
-    secure: bool = Field(default=False, description="Use HTTPS for MinIO connection")
+    access_key: SecretStr | None = Field(default=None, description="S3 access key")
+    secret_key: SecretStr | None = Field(default=None, description="S3 secret key")
+    secure: bool = Field(default=False, description="Use HTTPS for S3 connection")
 
 
 class DisplayConfig(BaseSettings):
@@ -63,7 +63,7 @@ class Settings(BaseSettings):
 
     device: DeviceConfig = Field(default_factory=DeviceConfig)
     mqtt: MQTTConfig = Field(default_factory=MQTTConfig)
-    minio: MinIOConfig = Field(default_factory=MinIOConfig)
+    s3: S3Config = Field(default_factory=S3Config)
     display: DisplayConfig = Field(default_factory=DisplayConfig)
 
     config_file: Path | None = Field(default=None, description="Path to YAML configuration file")
@@ -77,6 +77,7 @@ class Settings(BaseSettings):
 
         Returns:
             Settings instance with values from YAML merged with env vars.
+
         """
         with yaml_path.open() as f:
             yaml_config = yaml.safe_load(f) or {}
@@ -84,13 +85,13 @@ class Settings(BaseSettings):
         # Build nested config from YAML
         device_config = DeviceConfig(**yaml_config.get("device", {}))
         mqtt_config = MQTTConfig(**yaml_config.get("mqtt", {}))
-        minio_config = MinIOConfig(**yaml_config.get("minio", {}))
+        s3_config = S3Config(**yaml_config.get("s3", {}))
         display_config = DisplayConfig(**yaml_config.get("display", {}))
 
         return cls(
             device=device_config,
             mqtt=mqtt_config,
-            minio=minio_config,
+            s3=s3_config,
             display=display_config,
             config_file=yaml_path,
         )
@@ -104,6 +105,7 @@ def load_settings(config_path: Path | None = None) -> Settings:
 
     Returns:
         Settings instance with merged configuration.
+
     """
     if config_path and config_path.exists():
         return Settings.from_yaml(config_path)

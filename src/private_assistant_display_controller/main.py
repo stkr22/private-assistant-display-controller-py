@@ -24,6 +24,7 @@ def setup_logging(verbose: bool = False) -> None:
 
     Args:
         verbose: If True, set log level to DEBUG.
+
     """
     level = logging.DEBUG if verbose else logging.INFO
     logging.basicConfig(

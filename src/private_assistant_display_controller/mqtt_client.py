@@ -47,6 +47,7 @@ class MQTTClient:
             device_id: Device identifier for topic subscription.
             on_command: Callback for incoming display commands.
             on_registration_response: Callback for registration responses.
+
         """
         self._config = config
         self._device_id = device_id
@@ -71,7 +72,7 @@ class MQTTClient:
         return self.REGISTERED_TOPIC_TEMPLATE.format(device_id=self._device_id)
 
     async def run(self) -> None:
-        """Main MQTT loop with automatic reconnection.
+        """Run the main MQTT loop with automatic reconnection.
 
         This method runs indefinitely, maintaining the MQTT connection
         and processing incoming messages.
@@ -132,6 +133,7 @@ class MQTTClient:
 
         Args:
             message: MQTT message to process.
+
         """
         topic = str(message.topic)
         raw_payload = message.payload
@@ -161,6 +163,7 @@ class MQTTClient:
 
         Args:
             registration: Registration payload.
+
         """
         await self._wait_connected()
         assert self._client is not None
@@ -177,6 +180,7 @@ class MQTTClient:
 
         Args:
             acknowledge: Acknowledgment payload.
+
         """
         await self._wait_connected()
         assert self._client is not None
@@ -192,17 +196,16 @@ class MQTTClient:
             acknowledge.image_id,
         )
 
-    async def _wait_connected(self, timeout: float = 30.0) -> None:
+    async def _wait_connected(self) -> None:
         """Wait for MQTT connection to be established.
 
-        Args:
-            timeout: Maximum time to wait for connection.
-
         Raises:
-            RuntimeError: If connection is not established within timeout.
+            RuntimeError: If connection is not established within 30 seconds.
+
         """
         try:
-            await asyncio.wait_for(self._connected.wait(), timeout)
+            async with asyncio.timeout(30.0):
+                await self._connected.wait()
         except TimeoutError:
             raise RuntimeError("MQTT connection timeout") from None
 

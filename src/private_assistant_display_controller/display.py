@@ -33,6 +33,7 @@ class DisplayInterface(ABC):
         Args:
             image: PIL Image to display.
             saturation: Color saturation for Spectra 6 displays (0.0-1.0).
+
         """
 
     @abstractmethod
@@ -64,6 +65,7 @@ class InkyDisplay(DisplayInterface):
 
         Raises:
             DisplayError: If the display cannot be initialized.
+
         """
         self._orientation = orientation
         self._executor = executor or ThreadPoolExecutor(max_workers=1, thread_name_prefix="inky")
@@ -102,6 +104,7 @@ class InkyDisplay(DisplayInterface):
 
         Raises:
             DisplayError: If the display update fails.
+
         """
         async with self._lock:
             loop = asyncio.get_event_loop()
@@ -119,7 +122,7 @@ class InkyDisplay(DisplayInterface):
                 raise DisplayError(f"Display update failed: {e}") from e
 
     def _show_image_sync(self, image: Image.Image, saturation: float) -> None:
-        """Synchronous display update implementation.
+        """Perform synchronous display update.
 
         This method blocks for ~20-25 seconds during the e-ink refresh.
 
@@ -129,6 +132,7 @@ class InkyDisplay(DisplayInterface):
 
         Raises:
             DisplayError: If image dimensions don't match display dimensions.
+
         """
         # Validate image dimensions - skill is responsible for correct sizing
         if image.size != (self.width, self.height):
@@ -143,13 +147,9 @@ class InkyDisplay(DisplayInterface):
         try:
             self._display.show(busy_wait=True)  # type: ignore[union-attr]
         except FileNotFoundError as e:
-            raise DisplayError(
-                "SPI device not found. Ensure SPI is enabled via raspi-config and reboot."
-            ) from e
+            raise DisplayError("SPI device not found. Ensure SPI is enabled via raspi-config and reboot.") from e
         except PermissionError as e:
-            raise DisplayError(
-                "Permission denied accessing SPI device. Add user to 'spi' group and re-login."
-            ) from e
+            raise DisplayError("Permission denied accessing SPI device. Add user to 'spi' group and re-login.") from e
         logger.info("Display update complete")
 
     async def clear(self) -> None:
@@ -175,6 +175,7 @@ class MockDisplay(DisplayInterface):
         Args:
             width: Simulated display width.
             height: Simulated display height.
+
         """
         self._width = width
         self._height = height
@@ -210,6 +211,7 @@ class MockDisplay(DisplayInterface):
 
         Raises:
             DisplayError: If image dimensions don't match display dimensions.
+
         """
         _ = saturation  # Unused in mock, but part of interface
 
@@ -241,7 +243,7 @@ def create_display(
     mock_width: int = 1600,
     mock_height: int = 1200,
 ) -> DisplayInterface:
-    """Factory function to create the appropriate display implementation.
+    """Create the appropriate display implementation.
 
     Args:
         mock: If True, create a MockDisplay for testing.
@@ -254,6 +256,7 @@ def create_display(
 
     Raises:
         DisplayError: If real hardware initialization fails.
+
     """
     if mock:
         logger.info("Creating mock display (%dx%d)", mock_width, mock_height)

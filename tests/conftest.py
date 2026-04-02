@@ -8,8 +8,8 @@ from PIL import Image
 from private_assistant_display_controller.config import (
     DeviceConfig,
     DisplayConfig,
-    MinIOConfig,
     MQTTConfig,
+    S3Config,
     Settings,
 )
 from private_assistant_display_controller.display import MockDisplay
@@ -46,8 +46,8 @@ def mock_mqtt_client() -> AsyncMock:
 
 
 @pytest.fixture
-def mock_minio_client() -> MagicMock:
-    """Create a mock MinIO client."""
+def mock_s3_client() -> MagicMock:
+    """Create a mock S3 client."""
     client = MagicMock()
     client.is_configured = True
     client.configure = MagicMock()
@@ -62,7 +62,7 @@ def test_settings() -> Settings:
     return Settings(
         device=DeviceConfig(id="test-device", room="Test Room"),
         mqtt=MQTTConfig(host="localhost", port=1883),
-        minio=MinIOConfig(endpoint="localhost:9000", bucket="test-bucket"),
+        s3=S3Config(endpoint="localhost:9000", bucket="test-bucket"),
         display=DisplayConfig(mock=True),
     )
 
@@ -87,11 +87,11 @@ def sample_registration_response() -> RegistrationResponse:
     """Create a sample registration response."""
     return RegistrationResponse(
         status="registered",
-        minio_endpoint="minio.test.local:9000",
-        minio_bucket="test-images",
-        minio_access_key="test-access-key",
-        minio_secret_key="test-secret-key",
-        minio_secure=False,
+        s3_endpoint="s3.test.local:9000",
+        s3_bucket="test-images",
+        s3_access_key="test-access-key",
+        s3_secret_key="test-secret-key",
+        s3_secure=False,
     )
 
 

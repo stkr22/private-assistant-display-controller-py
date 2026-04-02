@@ -10,7 +10,7 @@ class ConfigurationError(DisplayControllerError):
 
 
 class CommunicationError(DisplayControllerError):
-    """Raised when MQTT or MinIO communication fails."""
+    """Raised when MQTT or S3 communication fails."""
 
 
 class DisplayError(DisplayControllerError):

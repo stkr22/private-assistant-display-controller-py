@@ -6,7 +6,6 @@ import logging
 from private_assistant_display_controller.config import Settings
 from private_assistant_display_controller.display import DisplayInterface, create_display
 from private_assistant_display_controller.exceptions import CommunicationError, DisplayError
-from private_assistant_display_controller.minio_client import MinIOImageClient
 from private_assistant_display_controller.models import (
     DeviceAcknowledge,
     DeviceRegistration,
@@ -15,6 +14,7 @@ from private_assistant_display_controller.models import (
     RegistrationResponse,
 )
 from private_assistant_display_controller.mqtt_client import MQTTClient
+from private_assistant_display_controller.s3_client import S3ImageClient
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 class DisplayController:
     """Main controller orchestrating display operations.
 
-    Coordinates MQTT communication, MinIO image fetching, and display updates.
+    Coordinates MQTT communication, S3 image fetching, and display updates.
     """
 
     def __init__(self, settings: Settings) -> None:
@@ -30,6 +30,7 @@ class DisplayController:
 
         Args:
             settings: Application settings.
+
         """
         self._settings = settings
         self._current_image_id: str | None = None
@@ -37,7 +38,7 @@ class DisplayController:
         self._shutdown_event = asyncio.Event()
 
         # Initialize components
-        self._minio = MinIOImageClient()
+        self._s3 = S3ImageClient()
         self._display: DisplayInterface = create_display(
             mock=settings.display.mock,
             orientation=settings.display.orientation,
@@ -52,7 +53,7 @@ class DisplayController:
         )
 
     async def run(self) -> None:
-        """Main entry point - start all async tasks.
+        """Start all async tasks and run until shutdown.
 
         Runs until shutdown is requested via shutdown() method.
         """
@@ -83,7 +84,7 @@ class DisplayController:
     async def _cleanup(self) -> None:
         """Clean up resources on shutdown."""
         logger.info("Cleaning up resources...")
-        self._minio.close()
+        self._s3.close()
         if hasattr(self._display, "close"):
             self._display.close()  # type: ignore[attr-defined]
         await self._mqtt.disconnect()
@@ -131,23 +132,25 @@ class DisplayController:
             retry_interval = min(retry_interval * 2, max_retry_interval)
 
     async def _handle_registration_response(self, response: RegistrationResponse) -> None:
-        """Process registration response and configure MinIO client.
+        """Process registration response and configure S3 client.
 
         Args:
-            response: Registration response containing MinIO credentials.
+            response: Registration response containing S3 credentials.
+
         """
         logger.info(
             "Received registration response: status=%s, endpoint=%s",
             response.status,
-            response.minio_endpoint,
+            response.s3_endpoint,
         )
 
-        self._minio.configure(
-            endpoint=response.minio_endpoint,
-            access_key=response.minio_access_key,
-            secret_key=response.minio_secret_key,
-            bucket=response.minio_bucket,
-            secure=response.minio_secure,
+        self._s3.configure(
+            endpoint=response.s3_endpoint,
+            access_key=response.s3_access_key,
+            secret_key=response.s3_secret_key,
+            bucket=response.s3_bucket,
+            secure=response.s3_secure,
+            region=response.s3_region,
         )
         self._is_registered.set()
 
@@ -156,6 +159,7 @@ class DisplayController:
 
         Args:
             command: Command to process.
+
         """
         logger.info("Received command: action=%s, image_id=%s", command.action, command.image_id)
 
@@ -197,17 +201,18 @@ class DisplayController:
 
         Raises:
             ValueError: If image_path or image_id is missing.
-            CommunicationError: If MinIO fetch fails.
+            CommunicationError: If S3 fetch fails.
             DisplayError: If display update fails.
+
         """
         if not command.image_path or not command.image_id:
             raise ValueError("display command requires image_path and image_id")
 
-        if not self._minio.is_configured:
-            raise CommunicationError("MinIO not configured - awaiting registration")
+        if not self._s3.is_configured:
+            raise CommunicationError("S3 not configured - awaiting registration")
 
         logger.info("Fetching image: %s", command.image_path)
-        image = await self._minio.fetch_image(command.image_path)
+        image = await self._s3.fetch_image(command.image_path)
 
         logger.info("Displaying image: %s", command.image_id)
         await self._display.show_image(
@@ -227,6 +232,7 @@ class DisplayController:
 
         Raises:
             DisplayError: If display clear fails.
+
         """
         logger.info("Clearing display")
         await self._display.clear()
@@ -246,6 +252,7 @@ class DisplayController:
             image_id: Image ID if applicable.
             success: Whether the command was successful.
             error: Error message if command failed.
+
         """
         acknowledge = DeviceAcknowledge(
             device_id=self._settings.device.id,

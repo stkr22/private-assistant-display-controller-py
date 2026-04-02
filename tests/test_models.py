@@ -79,24 +79,47 @@ class TestRegistrationResponse:
         """Test valid registration response."""
         response = RegistrationResponse(
             status="registered",
-            minio_endpoint="minio.local:9000",
-            minio_bucket="images",
-            minio_access_key="access123",
-            minio_secret_key="secret456",
-            minio_secure=True,
+            s3_endpoint="s3.local:9000",
+            s3_bucket="images",
+            s3_access_key="access123",
+            s3_secret_key="secret456",
+            s3_secure=True,
         )
         assert response.status == "registered"
-        assert response.minio_endpoint == "minio.local:9000"
-        assert response.minio_secure is True
+        assert response.s3_endpoint == "s3.local:9000"
+        assert response.s3_secure is True
+
+    def test_region_defaults_to_none(self) -> None:
+        """Test that s3_region is None when not provided."""
+        response = RegistrationResponse(
+            status="registered",
+            s3_endpoint="s3.local:9000",
+            s3_bucket="images",
+            s3_access_key="access123",
+            s3_secret_key="secret456",
+        )
+        assert response.s3_region is None
+
+    def test_region_parsed_when_present(self) -> None:
+        """Test that s3_region is parsed correctly."""
+        response = RegistrationResponse(
+            status="registered",
+            s3_endpoint="s3.local:9000",
+            s3_bucket="images",
+            s3_access_key="access123",
+            s3_secret_key="secret456",
+            s3_region="garage",
+        )
+        assert response.s3_region == "garage"
 
     def test_updated_status(self) -> None:
         """Test response with 'updated' status."""
         response = RegistrationResponse(
             status="updated",
-            minio_endpoint="minio.local:9000",
-            minio_bucket="images",
-            minio_access_key="access123",
-            minio_secret_key="secret456",
+            s3_endpoint="s3.local:9000",
+            s3_bucket="images",
+            s3_access_key="access123",
+            s3_secret_key="secret456",
         )
         assert response.status == "updated"
 
@@ -105,10 +128,10 @@ class TestRegistrationResponse:
         with pytest.raises(ValidationError):
             RegistrationResponse(
                 status="invalid",  # type: ignore[arg-type]
-                minio_endpoint="minio.local:9000",
-                minio_bucket="images",
-                minio_access_key="access123",
-                minio_secret_key="secret456",
+                s3_endpoint="s3.local:9000",
+                s3_bucket="images",
+                s3_access_key="access123",
+                s3_secret_key="secret456",
             )
 
 

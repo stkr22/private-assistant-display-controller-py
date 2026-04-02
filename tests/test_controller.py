@@ -89,8 +89,26 @@ class TestRegistrationResponse:
     """Tests for RegistrationResponse handling."""
 
     def test_registration_response_fields(self, sample_registration_response: RegistrationResponse) -> None:
-        """Test registration response contains MinIO credentials."""
-        assert sample_registration_response.minio_endpoint is not None
-        assert sample_registration_response.minio_bucket is not None
-        assert sample_registration_response.minio_access_key is not None
-        assert sample_registration_response.minio_secret_key is not None
+        """Test registration response contains S3 credentials."""
+        assert sample_registration_response.s3_endpoint is not None
+        assert sample_registration_response.s3_bucket is not None
+        assert sample_registration_response.s3_access_key is not None
+        assert sample_registration_response.s3_secret_key is not None
+
+    def test_registration_response_region_defaults_to_none(
+        self, sample_registration_response: RegistrationResponse
+    ) -> None:
+        """Test that s3_region defaults to None when absent."""
+        assert sample_registration_response.s3_region is None
+
+    def test_registration_response_with_region(self) -> None:
+        """Test that s3_region is parsed when present."""
+        response = RegistrationResponse(
+            status="registered",
+            s3_endpoint="s3.example.local:9000",
+            s3_bucket="images",
+            s3_access_key="key",
+            s3_secret_key="secret",
+            s3_region="garage",
+        )
+        assert response.s3_region == "garage"

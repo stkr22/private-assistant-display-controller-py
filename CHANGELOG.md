@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/stkr22/private-assistant-display-controller-py/compare/v0.1.1...v0.2.0) (2026-04-02)
+
+
+### Features
+
+* :sparkles: rename minio to s3 and add s3_region support ([469322b](https://github.com/stkr22/private-assistant-display-controller-py/commit/469322b7fe55aa15107db05bbcb788d33b099489))
+
 ## [0.1.1](https://github.com/stkr22/private-assistant-display-controller-py/compare/v0.1.0...v0.1.1) (2025-12-18)
 
 

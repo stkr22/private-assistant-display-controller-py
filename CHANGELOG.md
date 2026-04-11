@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.1](https://github.com/stkr22/private-assistant-display-controller-py/compare/v0.2.0...v0.2.1) (2026-04-11)
+
+
+### Bug Fixes
+
+* :bug: swap width/height and rotate image for portrait orientation ([eb767ac](https://github.com/stkr22/private-assistant-display-controller-py/commit/eb767ac6281b1d35c62b79cc5c16c9f3b71e1402))
+* :bug: swap width/height and rotate image for portrait orientation ([8e61fa9](https://github.com/stkr22/private-assistant-display-controller-py/commit/8e61fa948a43dc8a219135b0cb9f294755b22393))
+
 ## [0.2.0](https://github.com/stkr22/private-assistant-display-controller-py/compare/v0.1.1...v0.2.0) (2026-04-02)
 
 

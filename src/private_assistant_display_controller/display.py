@@ -85,13 +85,13 @@ class InkyDisplay(DisplayInterface):
 
     @property
     def width(self) -> int:
-        """Display width in pixels."""
-        return self._width
+        """Logical display width in pixels (accounts for orientation)."""
+        return self._height if self._orientation == "portrait" else self._width
 
     @property
     def height(self) -> int:
-        """Display height in pixels."""
-        return self._height
+        """Logical display height in pixels (accounts for orientation)."""
+        return self._width if self._orientation == "portrait" else self._height
 
     async def show_image(self, image: Image.Image, saturation: float = 0.5) -> None:
         """Display an image on the Inky screen.
@@ -142,8 +142,14 @@ class InkyDisplay(DisplayInterface):
                 "The skill must provide correctly sized images."
             )
 
+        # For portrait, rotate to physical hardware dimensions before sending.
+        # Hardware always expects landscape (raw) dimensions; ROTATE_90 is 90°
+        # counter-clockwise — adjust if the physical mounting requires the
+        # opposite direction.
+        display_image = image.transpose(Image.Transpose.ROTATE_90) if self._orientation == "portrait" else image
+
         logger.info("Updating display (this takes ~20-25 seconds)...")
-        self._display.set_image(image, saturation=saturation)  # type: ignore[union-attr]
+        self._display.set_image(display_image, saturation=saturation)  # type: ignore[union-attr]
         try:
             self._display.show(busy_wait=True)  # type: ignore[union-attr]
         except FileNotFoundError as e:
@@ -259,8 +265,10 @@ def create_display(
 
     """
     if mock:
-        logger.info("Creating mock display (%dx%d)", mock_width, mock_height)
-        return MockDisplay(width=mock_width, height=mock_height)
+        # Swap to logical (portrait) dimensions so the mock mirrors InkyDisplay behaviour.
+        w, h = (mock_height, mock_width) if orientation == "portrait" else (mock_width, mock_height)
+        logger.info("Creating mock display (%dx%d)", w, h)
+        return MockDisplay(width=w, height=h)
 
     logger.info("Creating Inky display with orientation: %s", orientation)
     return InkyDisplay(orientation=orientation)

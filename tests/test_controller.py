@@ -55,34 +55,30 @@ class TestMockDisplay:
         assert custom_display.width == 800
         assert custom_display.height == 480
 
-    def test_portrait_mock_dimensions_swapped_by_create_display(self) -> None:
-        """create_display swaps mock dimensions so portrait reports 1200x1600."""
-        display = create_display(mock=True, orientation="portrait", mock_width=1600, mock_height=1200)
-        assert display.width == 1200
-        assert display.height == 1600
-
-    def test_landscape_mock_dimensions_unchanged(self) -> None:
-        """create_display leaves landscape mock dimensions untouched."""
-        display = create_display(mock=True, orientation="landscape", mock_width=1600, mock_height=1200)
+    def test_mock_dimensions_unchanged_by_create_display(self) -> None:
+        """create_display passes mock dimensions through unchanged."""
+        display = create_display(mock=True, mock_width=1600, mock_height=1200)
         assert display.width == 1600
         assert display.height == 1200
 
     @pytest.mark.asyncio
-    async def test_portrait_image_accepted(self) -> None:
-        """MockDisplay in portrait configuration accepts portrait-sized images."""
-        display = create_display(mock=True, orientation="portrait", mock_width=1600, mock_height=1200)
+    async def test_portrait_image_auto_rotated_to_landscape(self) -> None:
+        """MockDisplay auto-rotates a portrait image to landscape before displaying."""
+        display = create_display(mock=True, mock_width=1600, mock_height=1200)
         assert isinstance(display, MockDisplay)
         portrait_image = Image.new("RGB", (1200, 1600), "blue")
         await display.show_image(portrait_image)
         assert display.display_count == 1
+        assert display.last_image is not None
+        assert display.last_image.size == (1600, 1200)
 
     @pytest.mark.asyncio
-    async def test_portrait_landscape_image_rejected(self) -> None:
-        """MockDisplay in portrait configuration rejects landscape-sized images."""
-        display = create_display(mock=True, orientation="portrait", mock_width=1600, mock_height=1200)
+    async def test_landscape_image_accepted_without_rotation(self) -> None:
+        """MockDisplay accepts a correctly-sized landscape image as-is."""
+        display = MockDisplay(width=1600, height=1200)
         landscape_image = Image.new("RGB", (1600, 1200), "red")
-        with pytest.raises(DisplayError):
-            await display.show_image(landscape_image)
+        await display.show_image(landscape_image)
+        assert display.display_count == 1
 
     @pytest.mark.asyncio
     async def test_wrong_image_size_raises_error(self) -> None:

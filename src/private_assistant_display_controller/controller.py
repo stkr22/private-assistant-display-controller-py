@@ -41,7 +41,6 @@ class DisplayController:
         self._s3 = S3ImageClient()
         self._display: DisplayInterface = create_display(
             mock=settings.display.mock,
-            orientation=settings.display.orientation,
             mock_width=settings.display.mock_width,
             mock_height=settings.display.mock_height,
         )

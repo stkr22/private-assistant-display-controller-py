@@ -4,7 +4,6 @@ import asyncio
 import logging
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
-from typing import Literal
 
 from PIL import Image
 
@@ -48,11 +47,13 @@ class InkyDisplay(DisplayInterface):
     so it runs in a dedicated thread pool to avoid blocking the async loop.
 
     Dimensions are auto-detected from the hardware during initialization.
+    The Inky library itself handles any internal rotation required by the
+    physical mounting — the public API always expects landscape images
+    (wider than tall).
     """
 
     def __init__(
         self,
-        orientation: Literal["landscape", "portrait"] = "landscape",
         executor: ThreadPoolExecutor | None = None,
     ) -> None:
         """Initialize the Inky display wrapper.
@@ -60,14 +61,12 @@ class InkyDisplay(DisplayInterface):
         Connects to hardware immediately to detect display dimensions.
 
         Args:
-            orientation: Display orientation.
             executor: Optional thread pool executor for display operations.
 
         Raises:
             DisplayError: If the display cannot be initialized.
 
         """
-        self._orientation = orientation
         self._executor = executor or ThreadPoolExecutor(max_workers=1, thread_name_prefix="inky")
         self._lock = asyncio.Lock()
 
@@ -85,13 +84,13 @@ class InkyDisplay(DisplayInterface):
 
     @property
     def width(self) -> int:
-        """Logical display width in pixels (accounts for orientation)."""
-        return self._height if self._orientation == "portrait" else self._width
+        """Display width in pixels (hardware landscape dimension)."""
+        return self._width
 
     @property
     def height(self) -> int:
-        """Logical display height in pixels (accounts for orientation)."""
-        return self._width if self._orientation == "portrait" else self._height
+        """Display height in pixels (hardware landscape dimension)."""
+        return self._height
 
     async def show_image(self, image: Image.Image, saturation: float = 0.5) -> None:
         """Display an image on the Inky screen.
@@ -134,19 +133,18 @@ class InkyDisplay(DisplayInterface):
             DisplayError: If image dimensions don't match display dimensions.
 
         """
-        # Validate image dimensions - skill is responsible for correct sizing
+        # Normalise to landscape: the Inky library always expects the wider
+        # dimension as width, and handles any physical mounting rotation
+        # internally (hard-coded rot90 in InkyEL133UF1.show()).
+        if image.height > image.width:
+            image = image.transpose(Image.Transpose.ROTATE_90)
+
         if image.size != (self.width, self.height):
             raise DisplayError(
-                f"Image size {image.size[0]}x{image.size[1]} does not match "
-                f"display size {self.width}x{self.height}. "
-                "The skill must provide correctly sized images."
+                f"Image size {image.size[0]}x{image.size[1]} does not match display size {self.width}x{self.height}."
             )
 
-        # For portrait, rotate to physical hardware dimensions before sending.
-        # Hardware always expects landscape (raw) dimensions; ROTATE_90 is 90°
-        # counter-clockwise — adjust if the physical mounting requires the
-        # opposite direction.
-        display_image = image.transpose(Image.Transpose.ROTATE_90) if self._orientation == "portrait" else image
+        display_image = image
 
         logger.info("Updating display (this takes ~20-25 seconds)...")
         self._display.set_image(display_image, saturation=saturation)  # type: ignore[union-attr]
@@ -221,12 +219,13 @@ class MockDisplay(DisplayInterface):
         """
         _ = saturation  # Unused in mock, but part of interface
 
-        # Validate image dimensions - same behavior as real display
+        # Normalise to landscape, same as the real display
+        if image.height > image.width:
+            image = image.transpose(Image.Transpose.ROTATE_90)
+
         if image.size != (self._width, self._height):
             raise DisplayError(
-                f"Image size {image.size[0]}x{image.size[1]} does not match "
-                f"display size {self._width}x{self._height}. "
-                "The skill must provide correctly sized images."
+                f"Image size {image.size[0]}x{image.size[1]} does not match display size {self._width}x{self._height}."
             )
 
         self._last_image = image.copy()
@@ -245,7 +244,6 @@ class MockDisplay(DisplayInterface):
 
 def create_display(
     mock: bool = False,
-    orientation: Literal["landscape", "portrait"] = "landscape",
     mock_width: int = 1600,
     mock_height: int = 1200,
 ) -> DisplayInterface:
@@ -253,7 +251,6 @@ def create_display(
 
     Args:
         mock: If True, create a MockDisplay for testing.
-        orientation: Display orientation for real hardware.
         mock_width: Width for mock display (ignored for real hardware).
         mock_height: Height for mock display (ignored for real hardware).
 
@@ -265,10 +262,8 @@ def create_display(
 
     """
     if mock:
-        # Swap to logical (portrait) dimensions so the mock mirrors InkyDisplay behaviour.
-        w, h = (mock_height, mock_width) if orientation == "portrait" else (mock_width, mock_height)
-        logger.info("Creating mock display (%dx%d)", w, h)
-        return MockDisplay(width=w, height=h)
+        logger.info("Creating mock display (%dx%d)", mock_width, mock_height)
+        return MockDisplay(width=mock_width, height=mock_height)
 
-    logger.info("Creating Inky display with orientation: %s", orientation)
-    return InkyDisplay(orientation=orientation)
+    logger.info("Creating Inky display")
+    return InkyDisplay()

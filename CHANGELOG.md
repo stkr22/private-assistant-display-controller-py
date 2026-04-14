@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.2](https://github.com/stkr22/private-assistant-display-controller-py/compare/v0.2.1...v0.2.2) (2026-04-14)
+
+
+### Bug Fixes
+
+* :bug: auto-normalise portrait images to landscape before display ([6f5d782](https://github.com/stkr22/private-assistant-display-controller-py/commit/6f5d782ed4c9948594885d9f52151ad2f2dcc2e2))
+* :bug: auto-normalise portrait images to landscape before display ([ed5a732](https://github.com/stkr22/private-assistant-display-controller-py/commit/ed5a732a4ff0ef5b189ce6f325ea1a3ce50e89f9))
+
 ## [0.2.1](https://github.com/stkr22/private-assistant-display-controller-py/compare/v0.2.0...v0.2.1) (2026-04-11)
 
 
